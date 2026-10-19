@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 import venv
+import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,6 +37,14 @@ class WheelInstallTest(unittest.TestCase):
             wheels = list(wheel_directory.glob("avero_devdeck-*.whl"))
             if len(wheels) != 1:
                 raise AssertionError(f"Expected one wheel, found {wheels}")
+            with zipfile.ZipFile(wheels[0]) as wheel:
+                wheel_files = set(wheel.namelist())
+                self.assertIn("avero_devdeck/__init__.py", wheel_files)
+                self.assertIn("avero_devdeck/cli.py", wheel_files)
+                entry_points = next(
+                    name for name in wheel_files if name.endswith(".dist-info/entry_points.txt")
+                )
+                self.assertIn("devdeck = avero_devdeck.cli:main", wheel.read(entry_points).decode())
 
             environment = temporary_path / "venv"
             venv.EnvBuilder(with_pip=True).create(environment)
@@ -46,7 +55,25 @@ class WheelInstallTest(unittest.TestCase):
                 check=True,
             )
 
+            expected_version = subprocess.run(
+                [
+                    str(python),
+                    "-c",
+                    "from importlib.metadata import version; print(version('avero-devdeck'))",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
             executable = scripts_directory / ("devdeck.exe" if os.name == "nt" else "devdeck")
+            version_result = subprocess.run(
+                [str(executable), "--version"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(version_result.stdout.strip(), f"devdeck {expected_version}")
+
             result = subprocess.run(
                 [str(executable), "--help"],
                 check=True,

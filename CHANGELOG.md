@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.5 — 2026-10-19
+- Derive the CLI version from installed distribution metadata, with a safe source-checkout fallback.
+- Verify wheel contents, console entry point, and installed `devdeck --version` output in a clean environment.
+
 ## 0.1.4 — 2026-10-19
 - Make wheel package inclusion explicit and strip the `src` prefix so the installed `devdeck` entry point can import `avero_devdeck`.
 - Add a clean virtual environment wheel-install smoke test for `devdeck --help`.
