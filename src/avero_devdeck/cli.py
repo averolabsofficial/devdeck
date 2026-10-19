@@ -400,7 +400,8 @@ def cmd_doctor(_args):
     checks = [
         ("Python", sys.version.split()[0] + (" (OK)" if sys.version_info >= (3, 10) else " (need 3.10+)")),
         ("Git", shutil.which("git") or "Not found - clone command unavailable"),
-        ("GitHub OAuth client ID", "Configured" if os.environ.get("DEVDECK_GITHUB_CLIENT_ID") else "Not set - required only for login"),
+        ("GitHub CLI", shutil.which("gh") or "Not found - install from https://cli.github.com/"),
+        ("OAuth Device Flow", "Configured (optional)" if os.environ.get("DEVDECK_GITHUB_CLIENT_ID") else "Not configured (optional)"),
         ("Saved GitHub login", "Found" if load_token() else "Not logged in"),
         ("Config directory", str(config_dir())),
         ("Platform", platform.platform()),
@@ -421,7 +422,7 @@ def build_parser():
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = parser.add_subparsers(dest="command")
-    p = sub.add_parser("login", help="Log in to GitHub through your browser")
+    p = sub.add_parser("login", help="Log in through GitHub CLI or configured OAuth Device Flow")
     p.set_defaults(func=cmd_login)
     p = sub.add_parser("logout", help="Remove saved GitHub login")
     p.set_defaults(func=cmd_logout)

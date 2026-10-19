@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import stat
+import subprocess
 import time
 import webbrowser
 from pathlib import Path
@@ -44,11 +46,13 @@ def load_token() -> str | None:
 
 def save_token(token: str) -> None:
     path = token_path()
-    path.write_text(json.dumps({"access_token": token}, indent=2), encoding="utf-8")
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, stat.S_IRUSR | stat.S_IWUSR)
     try:
         path.chmod(stat.S_IRUSR | stat.S_IWUSR)
     except OSError:
         pass
+    with os.fdopen(descriptor, "w", encoding="utf-8") as token_file:
+        json.dump({"access_token": token}, token_file, indent=2)
 
 
 def clear_token() -> bool:
@@ -81,11 +85,54 @@ def github_request(method: str, endpoint: str, **kwargs: Any) -> requests.Respon
     return response
 
 
-def login(client_id: str) -> str:
+def _login_with_github_cli(gh_path: str) -> str:
+    # Let gh own the interactive browser flow and its terminal prompts.
+    login_result = subprocess.run(
+        [gh_path, "auth", "login", "--hostname", "github.com", "--web", "--git-protocol", "https"],
+        check=False,
+    )
+    if login_result.returncode != 0:
+        raise RuntimeError(
+            "GitHub browser authorization did not complete. Run `devdeck login` and finish the `gh` prompt."
+        )
+
+    # Capture the token only in memory. Never include command output in errors or logs.
+    token_result = subprocess.run(
+        [gh_path, "auth", "token", "--hostname", "github.com"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    token = token_result.stdout.strip()
+    if token_result.returncode != 0 or not token:
+        raise RuntimeError(
+            "GitHub CLI did not return an authenticated token. Complete browser authorization, then retry."
+        )
+    save_token(token)
+    return token
+
+
+def login(client_id: str = "") -> str:
+    client_id = client_id.strip()
+    gh_path = shutil.which("gh")
+    if gh_path:
+        return _login_with_github_cli(gh_path)
+
+    if client_id and client_id != "YOUR_OAUTH_APP_CLIENT_ID":
+        return _login_with_device_flow(client_id)
+
+    raise RuntimeError(
+        "GitHub CLI (`gh`) is required for browser login. Install it from https://cli.github.com/ "
+        "and run `devdeck login` again. Alternatively, configure DEVDECK_GITHUB_CLIENT_ID "
+        "to use GitHub OAuth Device Flow."
+    )
+
+
+def _login_with_device_flow(client_id: str) -> str:
+    """Optional OAuth Device Flow for users who configured their own GitHub OAuth App."""
     if not client_id or client_id == "YOUR_OAUTH_APP_CLIENT_ID":
         raise RuntimeError(
-            "Set DEVDECK_GITHUB_CLIENT_ID to the Client ID of your GitHub OAuth App. "
-            "Enable Device Flow in that app's settings."
+            "A configured DEVDECK_GITHUB_CLIENT_ID is required for OAuth Device Flow."
         )
     response = requests.post(
         "https://github.com/login/device/code",

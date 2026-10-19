@@ -26,9 +26,9 @@ The package is built from the repository root using the `src/avero_devdeck` pack
 
 ## GitHub login
 
-DevDeck uses GitHub's OAuth **Device Flow**: it opens the official GitHub device authorization page in your browser and asks you to enter a short one-time code. It does not ask for your GitHub password and stores the returned token in your user config directory.
+By default, `devdeck login` uses the GitHub CLI (`gh`) to open GitHub's browser authorization flow. After authorization, DevDeck reads the token with `gh auth token` and saves it in DevDeck's user config directory with restrictive permissions. Install GitHub CLI from [cli.github.com](https://cli.github.com/) if it is not already installed.
 
-For OAuth login, create a GitHub OAuth App and enable **Device Flow** in its settings. Set its client ID:
+If GitHub CLI is unavailable, you can use the optional OAuth Device Flow by creating a GitHub OAuth App, enabling **Device Flow**, and setting its client ID in `DEVDECK_GITHUB_CLIENT_ID`.
 
 **Windows PowerShell**
 ```powershell
@@ -42,7 +42,7 @@ export DEVDECK_GITHUB_CLIENT_ID="YOUR_OAUTH_APP_CLIENT_ID"
 devdeck login
 ```
 
-Without a client ID, public repository browsing still works, but authenticated account/repository features are unavailable. Never put a client secret or personal access token in source code.
+Without GitHub CLI or a configured OAuth Client ID, public repository browsing still works, but authenticated account/repository features are unavailable. Never put a client secret or personal access token in source code.
 
 ## Commands
 

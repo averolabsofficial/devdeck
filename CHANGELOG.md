@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.6 — 2026-10-19
+- Make `devdeck login` delegate browser authorization to GitHub CLI by default and securely save the returned token.
+- Keep OAuth Device Flow available when `DEVDECK_GITHUB_CLIENT_ID` is configured and add clear GitHub CLI installation guidance.
+- Add mocked authentication and token-storage regression tests.
+
 ## 0.1.5 — 2026-10-19
 - Derive the CLI version from installed distribution metadata, with a safe source-checkout fallback.
 - Verify wheel contents, console entry point, and installed `devdeck --version` output in a clean environment.
