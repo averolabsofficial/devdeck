@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4 — 2026-10-19
+- Make wheel package inclusion explicit and strip the `src` prefix so the installed `devdeck` entry point can import `avero_devdeck`.
+- Add a clean virtual environment wheel-install smoke test for `devdeck --help`.
+
 ## 0.1.3 — 2026-10-19
 - Added a working root-level Python package and `devdeck` entry point.
 - Added repository fetch and interactive selected-file update workflows.
